@@ -1,9 +1,10 @@
-# arc_elevation.py
 """
-Python program converting ARC ASCII data to x,y grid data saved as a Numpy .npz file.
-
+elevdata.py
 Zachary Meves
 6 April 2018
+
+Data types to store elevation data obtained from ARC ASCII files.
+
 
 See http://resources.esri.com/help/9.3/arcgisengine/com_cpp/GP_ToolRef/Spatial_Analyst_Tools/esri_ascii_raster_format.htm
 for ARC ASCII format specification.
@@ -20,7 +21,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 class ElevData:
-    """Class defining x, y, elevation data from an ARC ASCII conversion.
+    """Class defining elevation vs. x, y data from an ARC ASCII conversion.
 
     Attributes
     ----------
@@ -33,16 +34,16 @@ class ElevData:
     elev_xy : 2D array
         Elevation data, indexed with (x, y) indices
     elev_ij : 2D array
-        Elevation data, indexed with (row, col) indices
+        Elevation data, indexed with (row, col) indices (transpose of elev_xy)
     meshes : dict
-        If generated, triangulations of the terrain, indexed by method name
+        If generated, triangulations of the terrain, indexed by triangulation method name
     """
 
     def __init__(self, filename=None, resolution=30):
         """Constructor.
 
-        Inputs
-        ------
+        Arguments
+        ---------
         filename : str
             Optional, name of ARC ASCII file to read
         resolution : float
@@ -67,10 +68,12 @@ class ElevData:
     def read_arc_ascii(self, filename, resolution):
         """Reads ARC ASCII data stored in filename and populates internal data.
 
-        Inputs
-        ------
+        Arguments
+        ---------
         filename : str
-            Name of file to read"""
+            Name of file to read
+        resolution : float
+            Resolution of ARC ASCII data in meters"""
 
         with open(filename) as f:
             # Read first line (number of columns)
@@ -115,15 +118,30 @@ class ElevData:
             self._x_mesh, self._y_mesh = np.meshgrid(self._x_coords, self._y_coords, indexing='ij')
             self._node_ids = self._make_node_ids()
 
-    def write(self, filename):
-        """Write data to a Numpy .npz file"""
+    def write(self, filename, suppress=False):
+        """Write data to a Numpy .npz file
 
-        print('Saving ElevData object to {} . . . '.filename, end='', flush=True)
+        Arguments
+        ---------
+        filename : str
+            Name of .npz file to write data to
+        suppress : bool
+            Optional, True to suppress print() output"""
+
+        if not suppress:
+            print('Saving ElevData object to {} . . . '.format(filename), end='', flush=True)
         np.savez(filename, elev_data=self)
-        print('Finished', flush=True)
+        if not suppress:
+            print('Finished', flush=True)
 
     def _make_node_ids(self):
-        """For internal use only. Make 2D array parallel to self._x_mesh and self._y_mesh storing IDs of nodes"""
+        """For internal use only. Make 2D array parallel to self._x_mesh and self._y_mesh
+        storing IDs of nodes for mesh generation.
+
+        Returns
+        -------
+        indices : 2D array
+            Node IDs, parallel to self._x_mesh and self._y_mesh"""
 
         indices = np.zeros(self._x_mesh.shape)
         j = 0
@@ -135,10 +153,12 @@ class ElevData:
     def _make_coordinate_arrays(self):
         """For internal use. Generates x and y coordinate arrays from contained data.
 
-        Outputs
+        Returns
         -------
-        x : array of x coordinates
-        y : array of y coordinates
+        x : ndarray
+            Array of x coordinates
+        y : ndarray
+            Array of y coordinates
         """
 
         num_x, num_y = self._data_xy.shape
@@ -148,38 +168,48 @@ class ElevData:
 
     @property
     def filename(self):
+        """Return name of ARC ASCII source file"""
         return self._filename
 
     @property
     def x(self):
+        """Return array of x coordinates"""
         return self._x_coords
     
     @property
     def y(self):
+        """Return array of y coordinates"""
         return self._y_coords
 
     @property
     def elev_ij(self):
+        """Return 2D array of elevation data in row, column order"""
         return self._data_ij
 
     @property
     def elev_xy(self):
+        """Return 2D array of elevation data in x, y order"""
         return self._data_xy
 
     @property
     def meshes(self):
+        """Return dictionary of generated meshes, indexed by triangulation method"""
         return self._meshes
 
     def mesh(self, method):
-        """Return mesh computed with method.
+        """Return mesh computed with triangulation method.
 
-        Input
-        -----
-        mesh : str
+        Arguments
+        ---------
+        method : str
             Method used to compute triangulation. One of:
                 'delaunay'
                 'split-cells'
             Append '_X' for meshes computed with downsample factor X
+
+        Returns
+        -------
+        mesh : ElevMesh
         """
 
         if method in self._meshes:
@@ -204,12 +234,12 @@ class ElevData:
         # Mask interior points in each region (apply mask to elevation data and x, y meshgrids)
 
     def _compute_gradients(self):
-        """Compute elevation gradients"""
+        """For internal use only. Compute elevation gradients"""
         # TODO: compute elevation gradients
         pass
 
     def _id_constant_gradient_regions(self):
-        """Identify continuous regions of constant gradient"""
+        """For internal use only. Identify continuous regions of constant gradient"""
         # TODO: ID constant gradient regions
         pass
 
@@ -218,7 +248,8 @@ class ElevData:
     ########################################################
 
     def delaunay(self):
-        """Creates Delaunay triangulation of elevation data."""
+        """Creates Delaunay triangulation of elevation data. Computed mesh is stored under
+        the name 'delaunay'."""
 
         x_array, y_array = np.ravel(self._x_mesh), np.ravel(self._y_mesh)  # Unroll grids
 
@@ -233,14 +264,14 @@ class ElevData:
         self._meshes['delaunay'] = tri
 
     def split_cell(self):
-        """Create split-cell triangulation of elevation data.
+        """Create split-cell triangulation of elevation data. Computed mesh is stored under
+        the name 'split_cell'.
 
         Split-cell meshes split each square defined by the elevation grid into 
         two right triangles"""
 
         print('Generating split-cell triangulation for {} points . . . '.format(self._node_ids.size), 
-                flush=True, end='')
-
+              flush=True, end='')
 
         Nx = len(self._x_coords) - 1  # Number of x intervals
         Ny = len(self._y_coords) - 1  # Number of y intervals
@@ -252,10 +283,13 @@ class ElevData:
         # Define mapping from row, column of squares to corner nodes
         def _bl(r, c):
             return r * (Nx + 1) + c
+
         def _br(r, c):
             return _bl(r, c) + 1
+
         def _tr(r, c):
             return (r + 1) * (Nx + 1) + c + 1
+
         def _tl(r, c):
             return _tr(r, c) - 1
 
@@ -268,7 +302,7 @@ class ElevData:
                 elem_ur = [tr, tl, br]  # Upper-right element nodes
                 
                 # Assign elements to nodes
-                elems[i, :]     = elem_ll
+                elems[i, :] = elem_ll
                 elems[i + 1, :] = elem_ur
                 i += 2
 
@@ -281,7 +315,7 @@ class ElevData:
         
         print('Finished')
 
-        tri = {'points' : points, 'simplices' : elems}
+        tri = {'points': points, 'simplices': elems}
         self._meshes['split_cell'] = tri
 
     ###########################################################################
@@ -289,13 +323,25 @@ class ElevData:
     ###########################################################################
 
     def _set_labels(self, ax):
-        """Sets plot labels appropriately"""
+        """For internal use only. Sets plot labels appropriately.
+
+        Arguments
+        ---------
+        ax : matplotlib Axes
+            Axes to set labels for"""
 
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
 
     def contour(self, *args, **kwargs):
-        """Plots contours of elevation data (topographic map)"""
+        """Plots contours of elevation data (topographic map).
+
+        Arguments
+        ---------
+        *args : positional arguments
+            Positional arguments to pass to matplotlib.axes.contour(*args, **kwargs)
+        **kwargs : keyword arguments
+            Keyword arguments to pass to matplotlib.axes.contour(*args, **kwargs)"""
 
         fig = plt.figure()  # Create figure
         ax = fig.add_subplot(111)
@@ -308,7 +354,14 @@ class ElevData:
         plt.show()
 
     def contourf(self, *args, **kwargs):
-        """Plots filled contours of elevation data"""
+        """Plots filled contours of elevation data.
+
+        Arguments
+        ---------
+        *args : positional arguments
+            Positional arguments to pass to matplotlib.axes.contourf(*args, **kwargs)
+        **kwargs : keyword arguments
+            Keyword arguments to pass to matplotlib.axes.contourf(*args, **kwargs)"""
 
         fig = plt.figure()  # Create figure
         ax = fig.add_subplot(111)
@@ -323,7 +376,14 @@ class ElevData:
     def scatter(self, *args, **kwargs):
         """Plots 3D scatterplot of elevation data
         
-        NOTE: This is likely to be extremely slow for large maps"""
+        NOTE: This is likely to be extremely slow for large maps.
+
+        Arguments
+        ---------
+        *args : positional arguments
+            Positional arguments to pass to matplotlib.axes.scatter(*args, **kwargs)
+        **kwargs : keyword arguments
+            Keyword arguments to pass to matplotlib.axes.scatter(*args, **kwargs)"""
 
         fig = plt.figure()  # Create figure
         ax = fig.add_subplot(111, projection='3d')
@@ -333,7 +393,14 @@ class ElevData:
         plt.show()
 
     def plot_surface(self, *args, **kwargs):
-        """Plots elevation data as surface"""
+        """Plots elevation data as surface.
+
+        Arguments
+        ---------
+        *args : positional arguments
+            Positional arguments to pass to matplotlib.axes.plot_surface(*args, **kwargs)
+        **kwargs : keyword arguments
+            Keyword arguments to pass to matplotlib.axes.plot_surface(*args, **kwargs)"""
 
         fig = plt.figure()  # Create figure
         ax = fig.add_subplot(111, projection='3d')
@@ -351,10 +418,15 @@ class ElevData:
     def plot_trisurf(self, method, *args, **kwargs):
         """Plots elevation triangulation. Must have triangulation generated.
         
-        Input
-        -----
+        Arguments
+        ---------
         method : str
-            Name of triangulation method"""
+            Name of triangulation method to plot mesh for
+        *args : positional arguments
+            Positional arguments to pass to matplotlib.axes.plot_trisurf(*args, **kwargs)
+        **kwargs : keyword arguments
+            Keyword arguments to pass to matplotlib.axes.plot_trisurf(*args, **kwargs)
+        """
 
         if method in self._meshes:
             tri = self._meshes[method]
@@ -376,37 +448,12 @@ class ElevData:
         else:
             raise KeyError("No triangulation generated with method '{}'".format(method))
 
-# if __name__ == '__main__':
-#     """Run main program at command line.
-#
-#     Optional arguments are names of ARC ASCII files (.asc) to read and convert, and
-#     optionally a .npz file to output results to"""
-#
-#     args = sys.argv[1:] # Get command line arguments
-#     print('args = {}'.format(args))
-#     converter = ARCConverter() # Create ARCConverter instance
-#
-#     # If no arguments given or help requested, print help string and exit
-#     if len(args) == 0 or 'help' in [x.lower() for x in args]:
-#         converter.print_help()
-#     else:
-#         input_filenames, output_filename = [], None
-#         for arg in args:
-#             if '.asc' in arg and arg[-4:] == '.asc':
-#                 input_filenames.append(arg)
-#             if '.npz' in arg and arg[-4:] == '.npz':
-#                 output_filename = arg
-#
-#         if not output_filename:
-#             output_filename = 'arc_ascii_converted.npz'
-#
-#         converter.output_file = output_filename
-#         for fname in input_filenames:
-#             converter.read(fname)
-#
-#         converter.write()
-    
-    
+class ElevMesh:
+    """Class defining an elevation data mesh."""
+
+    # TODO: Implement
+
+    pass
 
     
 
