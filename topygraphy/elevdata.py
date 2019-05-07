@@ -407,6 +407,20 @@ class ElevData:
         p = ax.plot_surface(self._x_mesh, self._y_mesh, self._data_xy, *args, **kwargs)
         ax.set_aspect('equal')
 
+        # Cubic bounding box for equal aspect ratio fudging
+        x_max, x_min = np.max(self._x_coords), np.min(self._x_coords)
+        y_max, y_min = np.max(self._y_coords), np.min(self._y_coords)
+        z_max, z_min = np.max(self._data_ij), np.min(self._data_ij)
+        max_range = np.array([x_max - x_min,
+                              y_max - y_min,
+                              z_max - z_min]).max()
+        Xb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][0].flatten() + 0.5 * (x_max + x_min)
+        Yb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][1].flatten() + 0.5 * (y_max + y_min)
+        Zb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][2].flatten() + 0.5 * (z_max + z_min)
+        # Comment or uncomment following both lines to test the fake bounding box:
+        for xb, yb, zb in zip(Xb, Yb, Zb):
+            ax.plot([xb], [yb], [zb], 'w')
+
         self._set_labels(ax)
         
         if 'cmap' in kwargs:

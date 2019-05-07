@@ -26,12 +26,11 @@ jungfrau = ElevData(input_filename)  # Create ElevData object based on file
 # Create filled contour plot with 100 color levels
 ###############################################################################
 jungfrau.contourf(100)
-
+jungfrau.plot_surface()
 ###############################################################################
 # Compute a split-cell mesh and plot the resulting mesh along with a surface
 # of the elevatoin data
 ###############################################################################
 jungfrau.split_cell()
 
-jungfrau.plot_surface()
 jungfrau.plot_trisurf('split_cell')

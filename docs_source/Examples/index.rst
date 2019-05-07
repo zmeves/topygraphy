@@ -1,4 +1,3 @@
 Examples
 ========
 
-Example information here

@@ -6,9 +6,11 @@
 ToPygraphy User Guide and API
 =============================
 
+
+Contents
+--------
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    Examples/index
 
