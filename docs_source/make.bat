@@ -27,6 +27,7 @@ if errorlevel 9009 (
 )
 
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS%
+python postprocess_docs.py
 goto end
 
 :help
