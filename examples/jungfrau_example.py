@@ -31,6 +31,7 @@ jungfrau.plot_surface()
 # Compute a split-cell mesh and plot the resulting mesh along with a surface
 # of the elevatoin data
 ###############################################################################
-jungfrau.split_cell()
+# jungfrau.split_cell()
+jungfrau.delaunay()
 
-jungfrau.plot_trisurf('split_cell')
+jungfrau.plot_trisurf('delaunay')

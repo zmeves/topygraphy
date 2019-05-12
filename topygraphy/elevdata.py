@@ -37,6 +37,10 @@ class ElevData:
         Elevation data, indexed with (row, col) indices (transpose of elev_xy)
     meshes : dict
         If generated, triangulations of the terrain, indexed by triangulation method name
+    meshgrids : tuple
+        X and Y-coordinate meshgrids for x-y indexed elevation data
+    node_ids : 2D array
+        Array of node IDs for x-y indexed elevation data. Used in mesh definition.
     """
 
     def __init__(self, filename=None, resolution=30):
@@ -143,7 +147,7 @@ class ElevData:
         indices : 2D array
             Node IDs, parallel to self._x_mesh and self._y_mesh"""
 
-        indices = np.zeros(self._x_mesh.shape)
+        indices = np.zeros(self._x_mesh.shape, dtype=int)
         j = 0
         for i in np.ndindex(self._x_mesh.shape):
             indices[i] = j
@@ -190,6 +194,16 @@ class ElevData:
     def elev_xy(self):
         """Return 2D array of elevation data in x, y order"""
         return self._data_xy
+
+    @property
+    def meshgrids(self):
+        """Return x-y indexed data's x and y-coordinate meshgrids"""
+        return self._x_mesh, self._y_mesh
+
+    @property
+    def node_ids(self):
+        """Return node IDs for x-y indexed data"""
+        return self._node_ids
 
     @property
     def meshes(self):
@@ -247,76 +261,35 @@ class ElevData:
     # Triangulation functions
     ########################################################
 
+    def split_cell(self):
+        """Create split-cell triangulation of elevation data.
+
+        Split-cell meshes split each square defined by the elevation grid into
+        two right triangles. Computed mesh is stored under the name 'split-cell'.
+        """
+
+        self.compute_mesh('split-cell')
+
     def delaunay(self):
         """Creates Delaunay triangulation of elevation data. Computed mesh is stored under
         the name 'delaunay'."""
 
-        x_array, y_array = np.ravel(self._x_mesh), np.ravel(self._y_mesh)  # Unroll grids
+        self.compute_mesh('delaunay')
 
-        points = np.zeros((len(x_array), 2))  # Generate n_points x 2 array
-        points[:, 0] = x_array[:]
-        points[:, 1] = y_array[:]
-        
-        print('Generating Delaunay triangulation for {} points . . . '.format(len(x_array)), flush=True, end='')
-        tri = Delaunay(points)  # Do Delaunay triangulation
-        print('Finished')
+    def compute_mesh(self, method):
+        """Compute triangulation of elevation data.
 
-        self._meshes['delaunay'] = tri
+        Arguments
+        ---------
+        method : str
+            Name of triangulation method. One of `ElevMesh.methods`"""
 
-    def split_cell(self):
-        """Create split-cell triangulation of elevation data. Computed mesh is stored under
-        the name 'split_cell'.
-
-        Split-cell meshes split each square defined by the elevation grid into 
-        two right triangles"""
-
-        print('Generating split-cell triangulation for {} points . . . '.format(self._node_ids.size), 
-              flush=True, end='')
-
-        Nx = len(self._x_coords) - 1  # Number of x intervals
-        Ny = len(self._y_coords) - 1  # Number of y intervals
-
-        # Create element-to-node mapping
-        num_elems = Nx * Ny * 2  # Number of elements total
-        elems = np.empty((num_elems, 3))  # List of elements (arrays containing node IDs)
-
-        # Define mapping from row, column of squares to corner nodes
-        def _bl(r, c):
-            return r * (Nx + 1) + c
-
-        def _br(r, c):
-            return _bl(r, c) + 1
-
-        def _tr(r, c):
-            return (r + 1) * (Nx + 1) + c + 1
-
-        def _tl(r, c):
-            return _tr(r, c) - 1
-
-        # Iterate over elements, assigning indices of nodes
-        i = 0
-        for r in range(Nx):
-            for c in range(Ny):
-                tl, tr, br, bl = _tl(r, c), _tr(r, c), _br(r, c), _bl(r, c)
-                elem_ll = [bl, br, tl]  # Lower-left element nodes
-                elem_ur = [tr, tl, br]  # Upper-right element nodes
-                
-                # Assign elements to nodes
-                elems[i, :] = elem_ll
-                elems[i + 1, :] = elem_ur
-                i += 2
-
-        # Create list of nodes
-        points = np.empty((self._node_ids.size, 2))
-        j = 0
-        for i in np.ndindex(self._node_ids.shape):
-            points[j, :] = [self._x_mesh[i], self._y_mesh[i]]
-            j += 1
-        
-        print('Finished')
-
-        tri = {'points': points, 'simplices': elems}
-        self._meshes['split_cell'] = tri
+        if method not in ElevMesh.methods:
+            raise NameError("{} is not a valid mesh computation method. Choose one of {}".format(
+                method, ElevMesh.methods))
+        if method not in self._meshes:
+            self._meshes[method] = ElevMesh(method=method, elev_data=self)
+        self._meshes[method].compute()
 
     ###########################################################################
     # Visualization
@@ -392,6 +365,22 @@ class ElevData:
 
         plt.show()
 
+    def _scale_z_axis(self, ax):
+        """For internal use only. Scale z-axis in 3D plots to have uniform visual appearance."""
+        # Cubic bounding box for equal aspect ratio fudging
+        x_max, x_min = np.max(self._x_coords), np.min(self._x_coords)
+        y_max, y_min = np.max(self._y_coords), np.min(self._y_coords)
+        z_max, z_min = np.max(self._data_ij), np.min(self._data_ij)
+        max_range = np.array([x_max - x_min,
+                              y_max - y_min,
+                              z_max - z_min]).max()
+        Xb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][0].flatten() + 0.5 * (x_max + x_min)
+        Yb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][1].flatten() + 0.5 * (y_max + y_min)
+        Zb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][2].flatten() + 0.5 * (z_max + z_min)
+        # Comment or uncomment following both lines to test the fake bounding box:
+        for xb, yb, zb in zip(Xb, Yb, Zb):
+            ax.plot([xb], [yb], [zb], 'w')
+
     def plot_surface(self, *args, **kwargs):
         """Plots elevation data as surface.
 
@@ -407,19 +396,7 @@ class ElevData:
         p = ax.plot_surface(self._x_mesh, self._y_mesh, self._data_xy, *args, **kwargs)
         ax.set_aspect('equal')
 
-        # Cubic bounding box for equal aspect ratio fudging
-        x_max, x_min = np.max(self._x_coords), np.min(self._x_coords)
-        y_max, y_min = np.max(self._y_coords), np.min(self._y_coords)
-        z_max, z_min = np.max(self._data_ij), np.min(self._data_ij)
-        max_range = np.array([x_max - x_min,
-                              y_max - y_min,
-                              z_max - z_min]).max()
-        Xb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][0].flatten() + 0.5 * (x_max + x_min)
-        Yb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][1].flatten() + 0.5 * (y_max + y_min)
-        Zb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][2].flatten() + 0.5 * (z_max + z_min)
-        # Comment or uncomment following both lines to test the fake bounding box:
-        for xb, yb, zb in zip(Xb, Yb, Zb):
-            ax.plot([xb], [yb], [zb], 'w')
+        self._scale_z_axis(ax)
 
         self._set_labels(ax)
         
@@ -446,10 +423,12 @@ class ElevData:
             tri = self._meshes[method]
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-            try:
-                p = ax.plot_trisurf(tri.points[:, 0], tri.points[:, 1], tri.simplices, np.ravel(self._data_ij), *args, **kwargs)
-            except AttributeError:
-                p = ax.plot_trisurf(tri['points'][:, 0], tri['points'][:, 1], tri['simplices'], np.ravel(self._data_ij), *args, **kwargs)
+            # try:
+            p = ax.plot_trisurf(tri.points[:, 0], tri.points[:, 1], tri.simplices, np.ravel(self._data_ij), *args, **kwargs)
+            # except AttributeError:
+            #     p = ax.plot_trisurf(tri['points'][:, 0], tri['points'][:, 1], tri['simplices'], np.ravel(self._data_ij), *args, **kwargs)
+
+            self._scale_z_axis(ax)
 
             self._set_labels(ax)
 
@@ -463,11 +442,159 @@ class ElevData:
             raise KeyError("No triangulation generated with method '{}'".format(method))
 
 class ElevMesh:
-    """Class defining an elevation data mesh."""
+    """Class defining an elevation data mesh. Closely follows NumPy triangulation format"""
 
-    # TODO: Implement
+    methods = ['split-cell', 'delaunay']  # Method options
 
-    pass
+    def __init__(self, method=None, elev_data=None):
+        """Constructor.
 
-    
+        Arguments
+        ---------
+        method : str
+            Mesh computation method to use. One of:
+                split-cell
+                delaunay
+        elev_data : ElevData
+            ElevData object to create a mesh for"""
 
+        self._method = method
+        self._elev_data = elev_data
+        self._tri = None
+        self._nodes = None
+
+        self._method_mapping = {'split_cell': self._split_cell,
+                                'delaunay': self._delaunay}
+
+    @property
+    def method(self):
+        """Return method name"""
+        return self._method
+
+    @method.setter
+    def method(self, new_method):
+        """Set the mesh computation method.
+
+        Arguments
+        ---------
+        new_method : str
+            New method to use. One of `methods`"""
+
+        if new_method not in self.methods:
+            print('{} is not a valid method. Choose one of {}'.format(new_method, self.methods))
+        elif new_method != self._method:  # If setting a new method
+            self._method = new_method
+            # Wipe previously created data
+            self._tri = None
+            self._nodes = None
+
+    @property
+    def simplices(self):
+        """Return triangles"""
+        return self._tri
+
+    @property
+    def tri(self):
+        """Return triangles"""
+        return self._tri
+
+    @property
+    def points(self):
+        """Return points"""
+        return self._nodes
+
+    @property
+    def nodes(self):
+        """Return points"""
+        return self._nodes
+
+    def compute(self):
+        """Perform mesh computation with current method and ElevData object."""
+
+        if self._elev_data is not None:  # Ensure an ElevData is associated
+            try:
+                self._method_mapping[self._method]()  # Do mesh computation
+            except KeyError:
+                raise KeyError("Unknown mesh computation type: {}".format(self._method))
+        else:
+            print("No ElevData is associated with this mesh object yet")
+
+    def _split_cell(self):
+        """Create split-cell triangulation of elevation data.
+
+        Split-cell meshes split each square defined by the elevation grid into
+        two right triangles"""
+
+        print('Generating split-cell triangulation for {} points . . . '.format(self._elev_data.node_ids.size),
+              flush=True, end='')
+
+        node_ids = self._elev_data.node_ids
+
+        Nx = len(self._elev_data.x) - 1  # Number of x intervals
+        Ny = len(self._elev_data.y) - 1  # Number of y intervals
+
+        # Create element-to-node mapping
+        num_elems = Nx * Ny * 2  # Number of elements total
+        elems = np.empty((num_elems, 3))  # List of elements (arrays containing node IDs)
+
+        # Define mapping from row, column of squares to corner nodes
+        def _bl(r, c):
+            # return r * (Nx + 1) + c
+            return r, c
+
+        def _br(r, c):
+            # return _bl(r, c) + 1
+            return r + 1, c
+
+        def _tr(r, c):
+            # return (r + 1) * (Nx + 1) + c + 1
+            return r + 1, c + 1
+
+        def _tl(r, c):
+            # return _tr(r, c) - 1
+            return r, c + 1
+
+        # Iterate over elements, assigning indices of nodes
+        i = 0
+        for r in range(Nx):
+            for c in range(Ny):
+                tl, tr, br, bl = _tl(r, c), _tr(r, c), _br(r, c), _bl(r, c)
+                # elem_ll = [bl, br, tl]  # Lower-left element nodes
+                # elem_ur = [tr, tl, br]  # Upper-right element nodes
+                elem_ll = [node_ids[bl], node_ids[br], node_ids[tl]]
+                elem_ur = [node_ids[tr], node_ids[tl], node_ids[br]]
+
+                # Assign elements to nodes
+                elems[i, :] = elem_ll
+                elems[i + 1, :] = elem_ur
+                i += 2
+
+        # Create list of nodes
+        points = np.empty((node_ids.size, 2))
+        j = 0
+        x_mesh, y_mesh = self._elev_data.meshgrids
+        for i in np.ndindex(node_ids.shape):
+            points[j, :] = [x_mesh[i], y_mesh[i]]
+            j += 1
+
+        print('Finished')
+
+        self._nodes = points
+        self._tri = elems
+
+    def _delaunay(self):
+        """Creates Delaunay triangulation of elevation data."""
+
+        x_mesh, y_mesh = self._elev_data.meshgrids
+        x_array, y_array = np.ravel(x_mesh), np.ravel(y_mesh)  # Unroll grids
+
+        points = np.zeros((len(x_array), 2))  # Generate n_points x 2 array
+        points[:, 0] = x_array[:]
+        points[:, 1] = y_array[:]
+
+        print('Generating Delaunay triangulation for {} points . . . '.format(len(x_array)), flush=True, end='')
+        tri = Delaunay(points)  # Do Delaunay triangulation
+        print('Finished')
+
+        self._nodes = tri.points
+        self._tri = tri.simplices
