@@ -1,6 +1,6 @@
 Elevation Data Storage and Manipulation
 ***************************************
 
-.. automodule:: topygraphy/elevdata
+.. automodule:: topygraphy.elevdata
     :members:
     :undoc-members:
