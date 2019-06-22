@@ -12,7 +12,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   topo/elevdata
+   elevdata
    Examples/index
 
 Indices
