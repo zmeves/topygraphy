@@ -1,1 +1,0 @@
-Search.setIndex({docnames:["Examples/index","index"],envversion:53,filenames:["Examples\\index.rst","index.rst"],objects:{},objnames:{},objtypes:{},terms:{content:1,exampl:1,here:0,index:1,inform:0,modul:1,page:1,search:1},titles:["Examples","ToPygraphy User Guide and API"],titleterms:{api:1,exampl:0,guid:1,indic:1,topygraphi:1,user:1}})

@@ -13,6 +13,10 @@ curdir = os.path.dirname(os.path.abspath(__file__))
 sourcedir = os.path.join(os.path.dirname(curdir), 'docs', 'html')
 targetdir = os.path.dirname(sourcedir)
 
+print('Clearing files from target directory ({})'.format(targetdir))
+shutil.rmtree(targetdir)
+os.makedirs(targetdir)
+
 print('Moving files from {} to {}'.format(sourcedir, targetdir))
 try:
     files = os.listdir(sourcedir)  # All files in source directory

@@ -1,14 +1,16 @@
 """
-elevdata.py
-Zachary Meves
-6 April 2018
-
 Data types to store elevation data obtained from ARC ASCII files.
 
 
 See http://resources.esri.com/help/9.3/arcgisengine/com_cpp/GP_ToolRef/Spatial_Analyst_Tools/esri_ascii_raster_format.htm
 for ARC ASCII format specification.
 See https://en.wikipedia.org/wiki/Esri_grid for more information.
+"""
+
+"""
+elevdata.py
+Zachary Meves
+6 April 2019
 """
 
 import sys, os
