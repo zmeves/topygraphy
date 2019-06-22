@@ -12,22 +12,27 @@ import shutil
 curdir = os.path.dirname(os.path.abspath(__file__))
 sourcedir = os.path.join(os.path.dirname(curdir), 'docs', 'html')
 targetdir = os.path.dirname(sourcedir)
+tempdir = os.path.join(os.path.dirname(targetdir), 'temp_docs')
 
-print('Clearing files from target directory ({})'.format(targetdir))
+print('Moving files from {} to {}'.format(sourcedir, tempdir))
+shutil.move(sourcedir, tempdir)
+
+print('Deleting files from {}'.format(targetdir))
 shutil.rmtree(targetdir)
-os.makedirs(targetdir)
 
-print('Moving files from {} to {}'.format(sourcedir, targetdir))
-try:
-    files = os.listdir(sourcedir)  # All files in source directory
-except FileNotFoundError:
-    exit()
+print('Moving files from {} to {}'.format(tempdir, targetdir))
+shutil.move(tempdir, targetdir)
 
-for f in files:
-    shutil.move(os.path.join(sourcedir, f), targetdir)
+# try:
+#     files = os.listdir(sourcedir)  # All files in source directory
+# except FileNotFoundError:
+#     exit()
 
-# Remove source directory after all files have been moved
-print('Removing directory {}'.format(sourcedir))
-os.removedirs(sourcedir)
+# for f in files:
+#     shutil.move(os.path.join(sourcedir, f), targetdir)
+
+# # Remove source directory after all files have been moved
+# print('Removing directory {}'.format(sourcedir))
+# os.removedirs(sourcedir)
 
 print('postprocess_docs.py finished')
