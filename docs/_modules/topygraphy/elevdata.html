@@ -1,0 +1,683 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>topygraphy.elevdata &#8212; ToPygraphy 0.00.01: documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">ToPygraphy 0.00.01: documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for topygraphy.elevdata</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Data types to store elevation data obtained from ARC ASCII files.</span>
+
+
+<span class="sd">See http://resources.esri.com/help/9.3/arcgisengine/com_cpp/GP_ToolRef/Spatial_Analyst_Tools/esri_ascii_raster_format.htm</span>
+<span class="sd">for ARC ASCII format specification.</span>
+<span class="sd">See https://en.wikipedia.org/wiki/Esri_grid for more information.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">elevdata.py</span>
+<span class="sd">Zachary Meves</span>
+<span class="sd">6 April 2019</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="k">as</span> <span class="nn">ma</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="k">import</span> <span class="n">Delaunay</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="k">import</span> <span class="n">Axes3D</span>
+
+
+<div class="viewcode-block" id="ElevData"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData">[docs]</a><span class="k">class</span> <span class="nc">ElevData</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class defining elevation vs. x, y data from an ARC ASCII conversion.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of source ARC ASCII file</span>
+<span class="sd">    x : ndarray</span>
+<span class="sd">        Array of x coordinates</span>
+<span class="sd">    y : ndarray</span>
+<span class="sd">        Array of y coordinates</span>
+<span class="sd">    elev_xy : 2D array</span>
+<span class="sd">        Elevation data, indexed with (x, y) indices</span>
+<span class="sd">    elev_ij : 2D array</span>
+<span class="sd">        Elevation data, indexed with (row, col) indices (transpose of elev_xy)</span>
+<span class="sd">    meshes : dict</span>
+<span class="sd">        If generated, triangulations of the terrain, indexed by triangulation method name</span>
+<span class="sd">    meshgrids : tuple</span>
+<span class="sd">        X and Y-coordinate meshgrids for x-y indexed elevation data</span>
+<span class="sd">    node_ids : 2D array</span>
+<span class="sd">        Array of node IDs for x-y indexed elevation data. Used in mesh definition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Optional, name of ARC ASCII file to read</span>
+<span class="sd">        resolution : float</span>
+<span class="sd">            Optional, resolution of ARC ASCII data in meters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Initialize data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_xy</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ll_coords</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dx</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_mesh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_mesh</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_node_ids</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># Triangulations of elevation surface</span>
+
+        <span class="c1"># Read file if supplied</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_arc_ascii</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">resolution</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ElevData.read_arc_ascii"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.read_arc_ascii">[docs]</a>    <span class="k">def</span> <span class="nf">read_arc_ascii</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">resolution</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads ARC ASCII data stored in filename and populates internal data.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of file to read</span>
+<span class="sd">        resolution : float</span>
+<span class="sd">            Resolution of ARC ASCII data in meters&quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># Read first line (number of columns)</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Read 2nd line (number of rows)</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Read 3rd line (lower-left corner x value)</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">xll_corner</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Read 4th line (lower-left corner y value)</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">yll_corner</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Read 5th line (cell side length)</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Read 6th line (NODATA value)</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">nodata_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># Preliminary information has now been read.</span>
+            <span class="c1"># Iterate over lines of file - each line defines one row</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">))</span>  <span class="c1"># row, col indexed elevation data</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Mask invalid data values</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">ma</span><span class="o">.</span><span class="n">masked_equal</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nodata_value</span><span class="p">)</span>
+
+            <span class="c1"># Assign object data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">filename</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data_xy</span> <span class="o">=</span> <span class="n">ma</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ll_coords</span> <span class="o">=</span> <span class="p">(</span><span class="n">xll_corner</span><span class="p">,</span> <span class="n">yll_corner</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dx</span> <span class="o">=</span> <span class="n">resolution</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_coordinate_arrays</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_x_mesh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_node_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_node_ids</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ElevData.write"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">suppress</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write data to a Numpy .npz file</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of .npz file to write data to</span>
+<span class="sd">        suppress : bool</span>
+<span class="sd">            Optional, True to suppress print() output&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">suppress</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Saving ElevData object to </span><span class="si">{}</span><span class="s1"> . . . &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">elev_data</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">suppress</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_make_node_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For internal use only. Make 2D array parallel to self._x_mesh and self._y_mesh</span>
+<span class="sd">        storing IDs of nodes for mesh generation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        indices : 2D array</span>
+<span class="sd">            Node IDs, parallel to self._x_mesh and self._y_mesh&quot;&quot;&quot;</span>
+
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">indices</span>
+
+    <span class="k">def</span> <span class="nf">_make_coordinate_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For internal use. Generates x and y coordinate arrays from contained data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        x : ndarray</span>
+<span class="sd">            Array of x coordinates</span>
+<span class="sd">        y : ndarray</span>
+<span class="sd">            Array of y coordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">num_x</span><span class="p">,</span> <span class="n">num_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_xy</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ll_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dx</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ll_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dx</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return name of ARC ASCII source file&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return array of x coordinates&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return array of y coordinates&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">elev_ij</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return 2D array of elevation data in row, column order&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">elev_xy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return 2D array of elevation data in x, y order&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_xy</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">meshgrids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return x-y indexed data&#39;s x and y-coordinate meshgrids&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_mesh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_mesh</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">node_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return node IDs for x-y indexed data&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_ids</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">meshes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return dictionary of generated meshes, indexed by triangulation method&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span>
+
+<div class="viewcode-block" id="ElevData.mesh"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.mesh">[docs]</a>    <span class="k">def</span> <span class="nf">mesh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return mesh computed with triangulation method.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        method : str</span>
+<span class="sd">            Method used to compute triangulation. One of:</span>
+<span class="sd">                &#39;delaunay&#39;</span>
+<span class="sd">                &#39;split-cells&#39;</span>
+<span class="sd">            Append &#39;_X&#39; for meshes computed with downsample factor X</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mesh : ElevMesh</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;No mesh computed with method &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ElevData.downsample"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.downsample">[docs]</a>    <span class="k">def</span> <span class="nf">downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Downsample elevation data, masking points that do not contribute to change in </span>
+<span class="sd">        curvature. </span>
+
+<span class="sd">        For example, for a collection of coplanar points (defining a plane), the interior points are masked </span>
+<span class="sd">        since they are not necessary to define the plane.&quot;&quot;&quot;</span>
+
+        <span class="c1"># TODO: implement downsampling</span>
+        <span class="k">pass</span></div>
+
+        <span class="c1"># Compute elevation derivatives wrt x and y: gradient vectors for each point</span>
+
+        <span class="c1"># Identify continuous regions with constant gradient</span>
+
+        <span class="c1"># Mask interior points in each region (apply mask to elevation data and x, y meshgrids)</span>
+
+    <span class="k">def</span> <span class="nf">_compute_gradients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For internal use only. Compute elevation gradients&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: compute elevation gradients</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_id_constant_gradient_regions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For internal use only. Identify continuous regions of constant gradient&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: ID constant gradient regions</span>
+        <span class="k">pass</span>
+
+    <span class="c1">########################################################</span>
+    <span class="c1"># Triangulation functions</span>
+    <span class="c1">########################################################</span>
+
+<div class="viewcode-block" id="ElevData.split_cell"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.split_cell">[docs]</a>    <span class="k">def</span> <span class="nf">split_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create split-cell triangulation of elevation data.</span>
+
+<span class="sd">        Split-cell meshes split each square defined by the elevation grid into</span>
+<span class="sd">        two right triangles. Computed mesh is stored under the name &#39;split-cell&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_mesh</span><span class="p">(</span><span class="s1">&#39;split-cell&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ElevData.delaunay"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.delaunay">[docs]</a>    <span class="k">def</span> <span class="nf">delaunay</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates Delaunay triangulation of elevation data. Computed mesh is stored under</span>
+<span class="sd">        the name &#39;delaunay&#39;.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_mesh</span><span class="p">(</span><span class="s1">&#39;delaunay&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ElevData.compute_mesh"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.compute_mesh">[docs]</a>    <span class="k">def</span> <span class="nf">compute_mesh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute triangulation of elevation data.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        method : str</span>
+<span class="sd">            Name of triangulation method. One of `ElevMesh.methods`&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ElevMesh</span><span class="o">.</span><span class="n">methods</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> is not a valid mesh computation method. Choose one of </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">method</span><span class="p">,</span> <span class="n">ElevMesh</span><span class="o">.</span><span class="n">methods</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">ElevMesh</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">elev_data</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span><span class="p">[</span><span class="n">method</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span></div>
+
+    <span class="c1">###########################################################################</span>
+    <span class="c1"># Visualization</span>
+    <span class="c1">###########################################################################</span>
+
+    <span class="k">def</span> <span class="nf">_set_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For internal use only. Sets plot labels appropriately.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        ax : matplotlib Axes</span>
+<span class="sd">            Axes to set labels for&quot;&quot;&quot;</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ElevData.contour"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.contour">[docs]</a>    <span class="k">def</span> <span class="nf">contour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots contours of elevation data (topographic map).</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        *args : positional arguments</span>
+<span class="sd">            Positional arguments to pass to matplotlib.axes.contour(*args, **kwargs)</span>
+<span class="sd">        **kwargs : keyword arguments</span>
+<span class="sd">            Keyword arguments to pass to matplotlib.axes.contour(*args, **kwargs)&quot;&quot;&quot;</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>  <span class="c1"># Create figure</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_labels</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Elevation&#39;</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ElevData.contourf"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.contourf">[docs]</a>    <span class="k">def</span> <span class="nf">contourf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots filled contours of elevation data.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        *args : positional arguments</span>
+<span class="sd">            Positional arguments to pass to matplotlib.axes.contourf(*args, **kwargs)</span>
+<span class="sd">        **kwargs : keyword arguments</span>
+<span class="sd">            Keyword arguments to pass to matplotlib.axes.contourf(*args, **kwargs)&quot;&quot;&quot;</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>  <span class="c1"># Create figure</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_labels</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
+        <span class="n">c</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Elevation&#39;</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ElevData.scatter"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.scatter">[docs]</a>    <span class="k">def</span> <span class="nf">scatter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots 3D scatterplot of elevation data</span>
+<span class="sd">        </span>
+<span class="sd">        NOTE: This is likely to be extremely slow for large maps.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        *args : positional arguments</span>
+<span class="sd">            Positional arguments to pass to matplotlib.axes.scatter(*args, **kwargs)</span>
+<span class="sd">        **kwargs : keyword arguments</span>
+<span class="sd">            Keyword arguments to pass to matplotlib.axes.scatter(*args, **kwargs)&quot;&quot;&quot;</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>  <span class="c1"># Create figure</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_mesh</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_mesh</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_labels</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_scale_z_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For internal use only. Scale z-axis in 3D plots to have uniform visual appearance.&quot;&quot;&quot;</span>
+        <span class="c1"># Cubic bounding box for equal aspect ratio fudging</span>
+        <span class="n">x_max</span><span class="p">,</span> <span class="n">x_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_coords</span><span class="p">)</span>
+        <span class="n">y_max</span><span class="p">,</span> <span class="n">y_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_coords</span><span class="p">)</span>
+        <span class="n">z_max</span><span class="p">,</span> <span class="n">z_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span><span class="p">)</span>
+        <span class="n">max_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">,</span>
+                              <span class="n">y_max</span> <span class="o">-</span> <span class="n">y_min</span><span class="p">,</span>
+                              <span class="n">z_max</span> <span class="o">-</span> <span class="n">z_min</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">Xb</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">max_range</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mgrid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_max</span> <span class="o">+</span> <span class="n">x_min</span><span class="p">)</span>
+        <span class="n">Yb</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">max_range</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mgrid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">y_max</span> <span class="o">+</span> <span class="n">y_min</span><span class="p">)</span>
+        <span class="n">Zb</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">max_range</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mgrid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">z_max</span> <span class="o">+</span> <span class="n">z_min</span><span class="p">)</span>
+        <span class="c1"># Comment or uncomment following both lines to test the fake bounding box:</span>
+        <span class="k">for</span> <span class="n">xb</span><span class="p">,</span> <span class="n">yb</span><span class="p">,</span> <span class="n">zb</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Xb</span><span class="p">,</span> <span class="n">Yb</span><span class="p">,</span> <span class="n">Zb</span><span class="p">):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">xb</span><span class="p">],</span> <span class="p">[</span><span class="n">yb</span><span class="p">],</span> <span class="p">[</span><span class="n">zb</span><span class="p">],</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ElevData.plot_surface"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.plot_surface">[docs]</a>    <span class="k">def</span> <span class="nf">plot_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots elevation data as surface.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        *args : positional arguments</span>
+<span class="sd">            Positional arguments to pass to matplotlib.axes.plot_surface(*args, **kwargs)</span>
+<span class="sd">        **kwargs : keyword arguments</span>
+<span class="sd">            Keyword arguments to pass to matplotlib.axes.plot_surface(*args, **kwargs)&quot;&quot;&quot;</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>  <span class="c1"># Create figure</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_mesh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_mesh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_xy</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale_z_axis</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_labels</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Elevation&#39;</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ElevData.plot_trisurf"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevData.plot_trisurf">[docs]</a>    <span class="k">def</span> <span class="nf">plot_trisurf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots elevation triangulation. Must have triangulation generated.</span>
+<span class="sd">        </span>
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        method : str</span>
+<span class="sd">            Name of triangulation method to plot mesh for</span>
+<span class="sd">        *args : positional arguments</span>
+<span class="sd">            Positional arguments to pass to matplotlib.axes.plot_trisurf(*args, **kwargs)</span>
+<span class="sd">        **kwargs : keyword arguments</span>
+<span class="sd">            Keyword arguments to pass to matplotlib.axes.plot_trisurf(*args, **kwargs)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span><span class="p">:</span>
+            <span class="n">tri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshes</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+            <span class="c1"># try:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot_trisurf</span><span class="p">(</span><span class="n">tri</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">tri</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">tri</span><span class="o">.</span><span class="n">simplices</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_ij</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="c1"># except AttributeError:</span>
+            <span class="c1">#     p = ax.plot_trisurf(tri[&#39;points&#39;][:, 0], tri[&#39;points&#39;][:, 1], tri[&#39;simplices&#39;], np.ravel(self._data_ij), *args, **kwargs)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scale_z_axis</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_labels</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Elevation&#39;</span><span class="p">)</span>
+
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;No triangulation generated with method &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span></div></div>
+
+<div class="viewcode-block" id="ElevMesh"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevMesh">[docs]</a><span class="k">class</span> <span class="nc">ElevMesh</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class defining an elevation data mesh. Closely follows NumPy triangulation format&quot;&quot;&quot;</span>
+
+    <span class="n">methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;split-cell&#39;</span><span class="p">,</span> <span class="s1">&#39;delaunay&#39;</span><span class="p">]</span>  <span class="c1"># Method options</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">elev_data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        method : str</span>
+<span class="sd">            Mesh computation method to use. One of:</span>
+<span class="sd">                split-cell</span>
+<span class="sd">                delaunay</span>
+<span class="sd">        elev_data : ElevData</span>
+<span class="sd">            ElevData object to create a mesh for&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span> <span class="o">=</span> <span class="n">elev_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tri</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;split_cell&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_cell</span><span class="p">,</span>
+                                <span class="s1">&#39;delaunay&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delaunay</span><span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return method name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span>
+
+    <span class="nd">@method</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_method</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the mesh computation method.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        new_method : str</span>
+<span class="sd">            New method to use. One of `methods`&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">new_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> is not a valid method. Choose one of </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">new_method</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">:</span>  <span class="c1"># If setting a new method</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">new_method</span>
+            <span class="c1"># Wipe previously created data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tri</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">simplices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return triangles&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tri</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tri</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return triangles&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tri</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return points&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return points&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
+
+<div class="viewcode-block" id="ElevMesh.compute"><a class="viewcode-back" href="../../elevdata.html#topygraphy.elevdata.ElevMesh.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform mesh computation with current method and ElevData object.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Ensure an ElevData is associated</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method_mapping</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">]()</span>  <span class="c1"># Do mesh computation</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Unknown mesh computation type: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No ElevData is associated with this mesh object yet&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_split_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create split-cell triangulation of elevation data.</span>
+
+<span class="sd">        Split-cell meshes split each square defined by the elevation grid into</span>
+<span class="sd">        two right triangles&quot;&quot;&quot;</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Generating split-cell triangulation for </span><span class="si">{}</span><span class="s1"> points . . . &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span><span class="o">.</span><span class="n">node_ids</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+              <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="n">node_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span><span class="o">.</span><span class="n">node_ids</span>
+
+        <span class="n">Nx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># Number of x intervals</span>
+        <span class="n">Ny</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># Number of y intervals</span>
+
+        <span class="c1"># Create element-to-node mapping</span>
+        <span class="n">num_elems</span> <span class="o">=</span> <span class="n">Nx</span> <span class="o">*</span> <span class="n">Ny</span> <span class="o">*</span> <span class="mi">2</span>  <span class="c1"># Number of elements total</span>
+        <span class="n">elems</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">num_elems</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>  <span class="c1"># List of elements (arrays containing node IDs)</span>
+
+        <span class="c1"># Define mapping from row, column of squares to corner nodes</span>
+        <span class="k">def</span> <span class="nf">_bl</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+            <span class="c1"># return r * (Nx + 1) + c</span>
+            <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span>
+
+        <span class="k">def</span> <span class="nf">_br</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+            <span class="c1"># return _bl(r, c) + 1</span>
+            <span class="k">return</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">c</span>
+
+        <span class="k">def</span> <span class="nf">_tr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+            <span class="c1"># return (r + 1) * (Nx + 1) + c + 1</span>
+            <span class="k">return</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">def</span> <span class="nf">_tl</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+            <span class="c1"># return _tr(r, c) - 1</span>
+            <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c1"># Iterate over elements, assigning indices of nodes</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Nx</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Ny</span><span class="p">):</span>
+                <span class="n">tl</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">br</span><span class="p">,</span> <span class="n">bl</span> <span class="o">=</span> <span class="n">_tl</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="n">_tr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="n">_br</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="n">_bl</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+                <span class="c1"># elem_ll = [bl, br, tl]  # Lower-left element nodes</span>
+                <span class="c1"># elem_ur = [tr, tl, br]  # Upper-right element nodes</span>
+                <span class="n">elem_ll</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_ids</span><span class="p">[</span><span class="n">bl</span><span class="p">],</span> <span class="n">node_ids</span><span class="p">[</span><span class="n">br</span><span class="p">],</span> <span class="n">node_ids</span><span class="p">[</span><span class="n">tl</span><span class="p">]]</span>
+                <span class="n">elem_ur</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_ids</span><span class="p">[</span><span class="n">tr</span><span class="p">],</span> <span class="n">node_ids</span><span class="p">[</span><span class="n">tl</span><span class="p">],</span> <span class="n">node_ids</span><span class="p">[</span><span class="n">br</span><span class="p">]]</span>
+
+                <span class="c1"># Assign elements to nodes</span>
+                <span class="n">elems</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">elem_ll</span>
+                <span class="n">elems</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">elem_ur</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">2</span>
+
+        <span class="c1"># Create list of nodes</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">node_ids</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">x_mesh</span><span class="p">,</span> <span class="n">y_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span><span class="o">.</span><span class="n">meshgrids</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">node_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_mesh</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y_mesh</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tri</span> <span class="o">=</span> <span class="n">elems</span>
+
+    <span class="k">def</span> <span class="nf">_delaunay</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates Delaunay triangulation of elevation data.&quot;&quot;&quot;</span>
+
+        <span class="n">x_mesh</span><span class="p">,</span> <span class="n">y_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elev_data</span><span class="o">.</span><span class="n">meshgrids</span>
+        <span class="n">x_array</span><span class="p">,</span> <span class="n">y_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">x_mesh</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">y_mesh</span><span class="p">)</span>  <span class="c1"># Unroll grids</span>
+
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">x_array</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># Generate n_points x 2 array</span>
+        <span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_array</span><span class="p">[:]</span>
+        <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_array</span><span class="p">[:]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Generating Delaunay triangulation for </span><span class="si">{}</span><span class="s1"> points . . . &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_array</span><span class="p">)),</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">tri</span> <span class="o">=</span> <span class="n">Delaunay</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>  <span class="c1"># Do Delaunay triangulation</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">tri</span><span class="o">.</span><span class="n">points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tri</span> <span class="o">=</span> <span class="n">tri</span><span class="o">.</span><span class="n">simplices</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">ToPygraphy 0.00.01: documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Zach Meves.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>
