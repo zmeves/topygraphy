@@ -1,6 +1,6 @@
 Elevation Data Storage and Manipulation
 ***************************************
 
-.. py:currentmodule:: topygraphy
+.. py:currentmodule:: ../../topygraphy
 
 .. automodule:: elevdata
