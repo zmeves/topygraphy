@@ -13,6 +13,7 @@ curdir = os.path.dirname(os.path.abspath(__file__))
 sourcedir = os.path.join(os.path.dirname(curdir), 'docs', 'html')
 targetdir = os.path.dirname(sourcedir)
 tempdir = os.path.join(os.path.dirname(targetdir), 'temp_docs')
+codedir = os.path.join(os.path.dirname(targetdir), 'topygraphy')
 
 print('Moving files from {} to {}'.format(sourcedir, tempdir))
 shutil.move(sourcedir, tempdir)
@@ -34,5 +35,8 @@ shutil.move(tempdir, targetdir)
 # # Remove source directory after all files have been moved
 # print('Removing directory {}'.format(sourcedir))
 # os.removedirs(sourcedir)
+
+print('Running sphinx-apidoc')
+os.system('sphinx-apidoc -o {} {}'.format(os.path.join(targetdir, 'source'), codedir))
 
 print('postprocess_docs.py finished')

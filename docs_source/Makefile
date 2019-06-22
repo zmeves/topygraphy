@@ -4,9 +4,11 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
+SPHINXAPI     = sphinx-apidoc
 SPHINXPROJ    = ToPygraphy
 SOURCEDIR     = .
 BUILDDIR      = ../docs
+BUILDAPI      = ../docs/source
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -19,3 +21,4 @@ help:
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	python postprocess_docs.py
+
