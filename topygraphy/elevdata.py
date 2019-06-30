@@ -19,11 +19,13 @@ import numpy.ma as ma
 from copy import deepcopy
 from scipy.spatial import Delaunay
 from matplotlib import pyplot as plt
+from matplotlib import cm, colors
 from mpl_toolkits.mplot3d import Axes3D
 
 
 class ElevData:
-    """Class defining elevation vs. x, y data from an ARC ASCII conversion.
+    """Class defining elevation vs. x, y data from an ARC ASCII conversion. Once the data has
+    been read, surface triangulations can be generated, modified, and exported to .stl files.
 
     Attributes
     ----------
@@ -66,6 +68,9 @@ class ElevData:
         self._x_mesh, self._y_mesh = None, None
         self._node_ids = None
         self._meshes = dict()  # Triangulations of elevation surface
+
+        self._grad_mag = None  # Gradient magnitude at each point
+        self._lap_mag = None   # Laplacian at each point
 
         # Read file if supplied
         if filename:
@@ -123,6 +128,7 @@ class ElevData:
             self._x_coords, self._y_coords = self._make_coordinate_arrays()
             self._x_mesh, self._y_mesh = np.meshgrid(self._x_coords, self._y_coords, indexing='ij')
             self._node_ids = self._make_node_ids()
+            self._compute_gradients()
 
     def write(self, filename, suppress=False):
         """Write data to a Numpy .npz file
@@ -220,7 +226,7 @@ class ElevData:
         method : str
             Method used to compute triangulation. One of:
                 'delaunay'
-                'split-cells'
+                'split-cell'
             Append '_X' for meshes computed with downsample factor X
 
         Returns
@@ -251,8 +257,20 @@ class ElevData:
 
     def _compute_gradients(self):
         """For internal use only. Compute elevation gradients"""
-        # TODO: compute elevation gradients
-        pass
+        # TODO: compute elevation gradients using numpy.gradient
+
+        deriv_1 = np.gradient(self._data_xy, self._dx, edge_order=2)  # First derivative (gradient) of elevation
+        grad_x = deriv_1[0]  # Gradient wrt x
+        grad_y = deriv_1[1]  # Gradient wrt y
+
+        # Compute gradient magnitude at each point
+        self._grad_mag = np.sqrt(np.square(grad_x) + np.square(grad_y))
+
+        # Compute second partial derivatives
+        lap_x = np.gradient(grad_x, self._dx, edge_order=2)  # f_xx and f_xy
+        lap_y = np.gradient(grad_y, self._dx, edge_order=2)  # f_yx and f_yy
+
+        self._lap_mag = lap_x[0] + lap_y[1]  # Laplacian = f_xx + f_yy
 
     def _id_constant_gradient_regions(self):
         """For internal use only. Identify continuous regions of constant gradient"""
@@ -284,7 +302,7 @@ class ElevData:
         Arguments
         ---------
         method : str
-            Name of triangulation method. One of `ElevMesh.methods`"""
+            Name of triangulation method. One of :py:constant:`ElevMesh.methods`"""
 
         if method not in ElevMesh.methods:
             raise NameError("{} is not a valid mesh computation method. Choose one of {}".format(
@@ -308,48 +326,83 @@ class ElevData:
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
 
-    def contour(self, *args, **kwargs):
-        """Plots contours of elevation data (topographic map).
+    def _get_data(self, value):
+        """For internal use only. Get data and plot label based on value"""
+
+        if value == 'elev':
+            dat_plot = self._data_ij
+            label = "Elevation"
+        elif value == 'grad':
+            dat_plot = np.transpose(self._grad_mag)
+            label = "Gradient Magnitude"
+        elif value == 'laplace':
+            dat_plot = np.transpose(self._lap_mag)
+            label = "Laplacian (Curvature Magnitude)"
+        else:
+            raise TypeError("{} is not a known data type. Choose one of ['elev', 'grad', or 'laplace']".format(value))
+
+        return dat_plot, label
+
+    def contour(self, *args, value='elev', **kwargs):
+        """Plots contours of elevation data (topographic map). The ``value`` keyword
+        can be used to plot the elevation gradient or curvature instead.
 
         Arguments
         ---------
         *args : positional arguments
             Positional arguments to pass to matplotlib.axes.contour(*args, **kwargs)
+        value : str, optional
+            Value to plot, one of "elev", "grad", "laplace".
+                * "elev" will plot elevation data
+                * "grad" will plot elevation gradient magnitude
+                * "laplace" will plot elevation Laplacian (2nd derivative magnitude)
         **kwargs : keyword arguments
             Keyword arguments to pass to matplotlib.axes.contour(*args, **kwargs)"""
 
         fig = plt.figure()  # Create figure
         ax = fig.add_subplot(111)
-        p = ax.contour(self._x_coords, self._y_coords, self._data_ij, *args, **kwargs)
+
+        dat_plot, label = self._get_data(value)
+
+        p = ax.contour(self._x_coords, self._y_coords, dat_plot, *args, **kwargs)
 
         self._set_labels(ax)
         c = fig.colorbar(p)
-        c.set_label('Elevation')
+        c.set_label(label)
 
         plt.show()
 
-    def contourf(self, *args, **kwargs):
-        """Plots filled contours of elevation data.
+    def contourf(self, *args, value='elev', **kwargs):
+        """Plots filled contours of elevation data. The ``value`` keyword can be
+        used to plot the elevation gradient or curvature instead.
 
         Arguments
         ---------
         *args : positional arguments
             Positional arguments to pass to matplotlib.axes.contourf(*args, **kwargs)
+        value : str, optional
+            Value to plot, one of "elev", "grad", "laplace".
+                * "elev" will plot elevation data
+                * "grad" will plot elevation gradient magnitude
+                * "laplace" will plot elevation Laplacian (2nd derivative magnitude)
         **kwargs : keyword arguments
             Keyword arguments to pass to matplotlib.axes.contourf(*args, **kwargs)"""
 
         fig = plt.figure()  # Create figure
         ax = fig.add_subplot(111)
-        p = ax.contourf(self._x_coords, self._y_coords, self._data_ij, *args, **kwargs)
+
+        dat_plot, label = self._get_data(value)
+
+        p = ax.contourf(self._x_coords, self._y_coords, dat_plot, *args, **kwargs)
         self._set_labels(ax)
 
         c = fig.colorbar(p)
-        c.set_label('Elevation')
+        c.set_label(label)
 
         plt.show()
 
     def scatter(self, *args, **kwargs):
-        """Plots 3D scatterplot of elevation data
+        """Plots 3D scatterplot of elevation data.
         
         NOTE: This is likely to be extremely slow for large maps.
 
@@ -383,19 +436,44 @@ class ElevData:
         for xb, yb, zb in zip(Xb, Yb, Zb):
             ax.plot([xb], [yb], [zb], 'w')
 
-    def plot_surface(self, *args, **kwargs):
-        """Plots elevation data as surface.
+    def _make_colors(self, data, cmap=cm.jet):
+        """For internal use only. Convert an array of values to a same-shape array
+        of rgba values"""
+
+        norm = colors.Normalize(vmin=np.min(data), vmax=np.max(data), clip=True)
+        mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+        return mapper.to_rgba(data, norm=True)
+
+    def plot_surface(self, *args, value='elev', **kwargs):
+        """Plots elevation data as surface. The ``value`` keyword can be used
+        to color the surface by the elevation gradient or curvature.
 
         Arguments
         ---------
         *args : positional arguments
             Positional arguments to pass to matplotlib.axes.plot_surface(*args, **kwargs)
+        value : str, optional
+            Value to plot, one of "elev", "grad", "laplace".
+                * "elev" will plot elevation data
+                * "grad" will plot elevation gradient magnitude
+                * "laplace" will plot elevation Laplacian (2nd derivative magnitude)
         **kwargs : keyword arguments
             Keyword arguments to pass to matplotlib.axes.plot_surface(*args, **kwargs)"""
 
         fig = plt.figure()  # Create figure
         ax = fig.add_subplot(111, projection='3d')
-        p = ax.plot_surface(self._x_mesh, self._y_mesh, self._data_xy, *args, **kwargs)
+
+        dat_plot, label = self._get_data(value)
+
+        if 'color' in kwargs:
+            kwargs.pop('color')
+        if 'rstride' not in kwargs and 'cstride' not in kwargs:
+            kwargs['rstride'] = 5
+            kwargs['cstride'] = 5
+
+        p = ax.plot_surface(self._x_mesh, self._y_mesh, self._data_xy, *args,
+                            facecolors=self._make_colors(np.transpose(dat_plot)), **kwargs)
         ax.set_aspect('equal')
 
         self._scale_z_axis(ax)
@@ -404,11 +482,11 @@ class ElevData:
         
         if 'cmap' in kwargs:
             c = fig.colorbar(p)
-            c.set_label('Elevation')
+            c.set_label(label)
 
         plt.show()
 
-    def plot_trisurf(self, method, *args, **kwargs):
+    def plot_trisurf(self, method, *args, value='elev', **kwargs):
         """Plots elevation triangulation. Must have triangulation generated.
         
         Arguments
@@ -417,6 +495,11 @@ class ElevData:
             Name of triangulation method to plot mesh for
         *args : positional arguments
             Positional arguments to pass to matplotlib.axes.plot_trisurf(*args, **kwargs)
+        value : str, optional
+            Value to plot, one of "elev", "grad", "laplace".
+                * "elev" will plot elevation data
+                * "grad" will plot elevation gradient magnitude
+                * "laplace" will plot elevation Laplacian (2nd derivative magnitude)
         **kwargs : keyword arguments
             Keyword arguments to pass to matplotlib.axes.plot_trisurf(*args, **kwargs)
         """
@@ -425,8 +508,12 @@ class ElevData:
             tri = self._meshes[method]
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
+
+            dat_plot, label = self._get_data(value)
+
             # try:
-            p = ax.plot_trisurf(tri.points[:, 0], tri.points[:, 1], tri.simplices, np.ravel(self._data_ij), *args, **kwargs)
+            p = ax.plot_trisurf(tri.points[:, 0], tri.points[:, 1], tri.simplices, np.ravel(self._data_ij), *args,
+                                facecolors=np.ravel(self._make_colors(dat_plot)), **kwargs)
             # except AttributeError:
             #     p = ax.plot_trisurf(tri['points'][:, 0], tri['points'][:, 1], tri['simplices'], np.ravel(self._data_ij), *args, **kwargs)
 
@@ -436,12 +523,13 @@ class ElevData:
 
             if 'cmap' in kwargs:
                 c = fig.colorbar(p)
-                c.set_label('Elevation')
+                c.set_label(label)
 
             plt.show()
 
         else:
             raise KeyError("No triangulation generated with method '{}'".format(method))
+
 
 class ElevMesh:
     """Class defining an elevation data mesh. Closely follows NumPy triangulation format"""

@@ -7,15 +7,15 @@ Lauterbrunnen valley in the Bernese Alps, plot contour map, create and plot
 split-cell.
 """
 
+# Import and path updating
+import sys, os
+wd = os.path.abspath(__file__)  # Get absolute path of this file
+# topygraphy is located at ../
+sys.path.append(os.path.dirname(wd))
+
+from topygraphy.elevdata import ElevData
+
 if __name__ == '__main__':
-
-    # Import and path updating
-    import sys, os
-    wd = os.path.abspath(__file__)  # Get absolute path of this file
-    # topygraphy is located at ../
-    sys.path.append(os.path.dirname(wd))
-
-    from topygraphy.elevdata import ElevData
 
     ###############################################################################
     # Provide file name and read it
@@ -28,10 +28,10 @@ if __name__ == '__main__':
     # Create filled contour plot with 100 color levels
     ###############################################################################
     jungfrau.contourf(100)
-    jungfrau.plot_surface()
+    # jungfrau.plot_surface(rstride=5, cstride=5)
     ###############################################################################
     # Compute a split-cell mesh and plot the resulting mesh along with a surface
-    # of the elevatoin data
+    # of the elevation data
     ###############################################################################
     # jungfrau.split_cell()
     jungfrau.delaunay()
