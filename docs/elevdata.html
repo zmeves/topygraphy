@@ -1,388 +1,499 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>Elevation Data Storage and Manipulation &#8212; ToPygraphy 0.00.01: documentation</title>
-    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" integrity="sha384-KA6wR/X5RY4zFAHpv/CnoG2UW1uogYfdnP67Uv7eULvTveboZJg0qUpmJZb5VqzN" crossorigin="anonymous">
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link href="_static/css/index.css" rel="stylesheet">
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Examples" href="Examples/index.html" />
-    <link rel="prev" title="ToPygraphy User Guide and API" href="index.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Examples/index.html" title="Examples"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="ToPygraphy User Guide and API"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">ToPygraphy 0.00.01: documentation</a> &#187;</li> 
-      </ul>
-    </div>  
+    <link rel="prev" title="ToPygraphy User Guide and API" href="index.html" />
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="docsearch:language" content="en">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+
+<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+</button>
+
+<div id="navbar-menu" class="collapse navbar-collapse">
+  <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+    <li class="nav-item">
+        <a class="nav-link" href="index.html">Home</a>
+    </li>
+    
+    
+    <li class="nav-item active">
+        <a class="nav-link" href="">Elevation Data Storage and Manipulation</a>
+    </li>
+    
+    <li class="nav-item ">
+        <a class="nav-link" href="Examples/index.html">Examples</a>
+    </li>
+    
+    
+  </ul>
+  <ul class="navbar-nav ml-auto">
+    
+    
+  </ul>
+</div>
+    </nav>
+    
+
+    <div class="container-fluid">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 col-xl-2 bd-sidebar">
+
+<form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+  <div class="bd-toc-item active">
+  
+
+  <ul class="nav bd-sidenav">
+      
+      
+        
+      
+      
+      
+      
+    </ul>
+
+</nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+    </ul>
+</nav>
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 bd-content" role="main">
+              
+              <div>
+                
   <div class="section" id="module-topygraphy.elevdata">
 <span id="elevation-data-storage-and-manipulation"></span><h1>Elevation Data Storage and Manipulation<a class="headerlink" href="#module-topygraphy.elevdata" title="Permalink to this headline">¶</a></h1>
 <p>Data types to store elevation data obtained from ARC ASCII files.</p>
 <p>See <a class="reference external" href="http://resources.esri.com/help/9.3/arcgisengine/com_cpp/GP_ToolRef/Spatial_Analyst_Tools/esri_ascii_raster_format.htm">http://resources.esri.com/help/9.3/arcgisengine/com_cpp/GP_ToolRef/Spatial_Analyst_Tools/esri_ascii_raster_format.htm</a>
 for ARC ASCII format specification.
 See <a class="reference external" href="https://en.wikipedia.org/wiki/Esri_grid">https://en.wikipedia.org/wiki/Esri_grid</a> for more information.</p>
-<dl class="class">
+<dl class="py class">
 <dt id="topygraphy.elevdata.ElevData">
-<em class="property">class </em><code class="descclassname">topygraphy.elevdata.</code><code class="descname">ElevData</code><span class="sig-paren">(</span><em>filename=None</em>, <em>resolution=30</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class defining elevation vs. x, y data from an ARC ASCII conversion.</p>
-<dl class="attribute">
+<em class="property">class </em><code class="sig-prename descclassname">topygraphy.elevdata.</code><code class="sig-name descname">ElevData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">resolution</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class defining elevation vs. x, y data from an ARC ASCII conversion. Once the data has
+been read, surface triangulations can be generated, modified, and exported to .stl files.</p>
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.filename">
-<code class="descname">filename</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.filename" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Name of source ARC ASCII file</p>
+<code class="sig-name descname">filename</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of source ARC ASCII file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.x">
-<code class="descname">x</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.x" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – Array of x coordinates</p>
+<code class="sig-name descname">x</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of x coordinates</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.y">
-<code class="descname">y</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.y" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – Array of y coordinates</p>
+<code class="sig-name descname">y</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of y coordinates</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.elev_xy">
-<code class="descname">elev_xy</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.elev_xy" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>2D array</em> – Elevation data, indexed with (x, y) indices</p>
+<code class="sig-name descname">elev_xy</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.elev_xy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Elevation data, indexed with (x, y) indices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>2D array</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.elev_ij">
-<code class="descname">elev_ij</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.elev_ij" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>2D array</em> – Elevation data, indexed with (row, col) indices (transpose of elev_xy)</p>
+<code class="sig-name descname">elev_ij</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.elev_ij" title="Permalink to this definition">¶</a></dt>
+<dd><p>Elevation data, indexed with (row, col) indices (transpose of elev_xy)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>2D array</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.meshes">
-<code class="descname">meshes</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.meshes" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>dict</em> – If generated, triangulations of the terrain, indexed by triangulation method name</p>
+<code class="sig-name descname">meshes</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.meshes" title="Permalink to this definition">¶</a></dt>
+<dd><p>If generated, triangulations of the terrain, indexed by triangulation method name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.meshgrids">
-<code class="descname">meshgrids</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.meshgrids" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>tuple</em> – X and Y-coordinate meshgrids for x-y indexed elevation data</p>
+<code class="sig-name descname">meshgrids</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.meshgrids" title="Permalink to this definition">¶</a></dt>
+<dd><p>X and Y-coordinate meshgrids for x-y indexed elevation data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.8)">tuple</a></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevData.node_ids">
-<code class="descname">node_ids</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.node_ids" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>2D array</em> – Array of node IDs for x-y indexed elevation data. Used in mesh definition.</p>
+<code class="sig-name descname">node_ids</code><a class="headerlink" href="#topygraphy.elevdata.ElevData.node_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of node IDs for x-y indexed elevation data. Used in mesh definition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>2D array</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.compute_mesh">
-<code class="descname">compute_mesh</code><span class="sig-paren">(</span><em>method</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.compute_mesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.compute_mesh" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">compute_mesh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.compute_mesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.compute_mesh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute triangulation of elevation data.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of triangulation method. One of <cite>ElevMesh.methods</cite></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Name of triangulation method. One of <a href="#id1"><span class="problematic" id="id2">:py:constant:`ElevMesh.methods`</span></a></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.contour">
-<code class="descname">contour</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.contour"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.contour" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots contours of elevation data (topographic map).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.contour(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs)</li>
-<li><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.contour(<a href="#id5"><span class="problematic" id="id6">*</span></a>args, <a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs)</li>
+<code class="sig-name descname">contour</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">value</span><span class="o">=</span><span class="default_value">'elev'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.contour"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.contour" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots contours of elevation data (topographic map). The <code class="docutils literal notranslate"><span class="pre">value</span></code> keyword
+can be used to plot the elevation gradient or curvature instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.contour(<a href="#id3"><span class="problematic" id="id4">*</span></a>args, <a href="#id5"><span class="problematic" id="id6">**</span></a>kwargs)</p></li>
+<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – <dl class="simple">
+<dt>Value to plot, one of “elev”, “grad”, “laplace”.</dt><dd><ul>
+<li><p>”elev” will plot elevation data</p></li>
+<li><p>”grad” will plot elevation gradient magnitude</p></li>
+<li><p>”laplace” will plot elevation Laplacian (2nd derivative magnitude)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.contour(<a href="#id7"><span class="problematic" id="id8">*</span></a>args, <a href="#id9"><span class="problematic" id="id10">**</span></a>kwargs)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.contourf">
-<code class="descname">contourf</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.contourf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.contourf" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots filled contours of elevation data.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.contourf(<a href="#id9"><span class="problematic" id="id10">*</span></a>args, <a href="#id11"><span class="problematic" id="id12">**</span></a>kwargs)</li>
-<li><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.contourf(<a href="#id13"><span class="problematic" id="id14">*</span></a>args, <a href="#id15"><span class="problematic" id="id16">**</span></a>kwargs)</li>
+<code class="sig-name descname">contourf</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">value</span><span class="o">=</span><span class="default_value">'elev'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.contourf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.contourf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots filled contours of elevation data. The <code class="docutils literal notranslate"><span class="pre">value</span></code> keyword can be
+used to plot the elevation gradient or curvature instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.contourf(<a href="#id11"><span class="problematic" id="id12">*</span></a>args, <a href="#id13"><span class="problematic" id="id14">**</span></a>kwargs)</p></li>
+<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – <dl class="simple">
+<dt>Value to plot, one of “elev”, “grad”, “laplace”.</dt><dd><ul>
+<li><p>”elev” will plot elevation data</p></li>
+<li><p>”grad” will plot elevation gradient magnitude</p></li>
+<li><p>”laplace” will plot elevation Laplacian (2nd derivative magnitude)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.contourf(<a href="#id15"><span class="problematic" id="id16">*</span></a>args, <a href="#id17"><span class="problematic" id="id18">**</span></a>kwargs)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.delaunay">
-<code class="descname">delaunay</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.delaunay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.delaunay" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">delaunay</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.delaunay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.delaunay" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates Delaunay triangulation of elevation data. Computed mesh is stored under
 the name ‘delaunay’.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.downsample">
-<code class="descname">downsample</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.downsample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.downsample" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">downsample</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.downsample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.downsample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Downsample elevation data, masking points that do not contribute to change in
 curvature.</p>
 <p>For example, for a collection of coplanar points (defining a plane), the interior points are masked
 since they are not necessary to define the plane.</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">elev_ij</code></dt>
+<dl class="py method">
+<dt id="id0">
+<em class="property">property </em><code class="sig-name descname">elev_ij</code><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return 2D array of elevation data in row, column order</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">elev_xy</code></dt>
+<dl class="py method">
+<dt id="id19">
+<em class="property">property </em><code class="sig-name descname">elev_xy</code><a class="headerlink" href="#id19" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return 2D array of elevation data in x, y order</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">filename</code></dt>
+<dl class="py method">
+<dt id="id20">
+<em class="property">property </em><code class="sig-name descname">filename</code><a class="headerlink" href="#id20" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return name of ARC ASCII source file</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.mesh">
-<code class="descname">mesh</code><span class="sig-paren">(</span><em>method</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.mesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.mesh" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mesh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.mesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.mesh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return mesh computed with triangulation method.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – <dl class="docutils">
-<dt>Method used to compute triangulation. One of:</dt>
-<dd>’delaunay’
-‘split-cells’</dd>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – <dl class="simple">
+<dt>Method used to compute triangulation. One of:</dt><dd><p>’delaunay’
+‘split-cell’</p>
+</dd>
 </dl>
 <p>Append ‘_X’ for meshes computed with downsample factor X</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>mesh</strong></td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#topygraphy.elevdata.ElevMesh" title="topygraphy.elevdata.ElevMesh">ElevMesh</a></td>
-</tr>
-</tbody>
-</table>
+</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mesh</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#topygraphy.elevdata.ElevMesh" title="topygraphy.elevdata.ElevMesh">ElevMesh</a></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">meshes</code></dt>
+<dl class="py method">
+<dt id="id21">
+<em class="property">property </em><code class="sig-name descname">meshes</code><a class="headerlink" href="#id21" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return dictionary of generated meshes, indexed by triangulation method</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">meshgrids</code></dt>
+<dl class="py method">
+<dt id="id22">
+<em class="property">property </em><code class="sig-name descname">meshgrids</code><a class="headerlink" href="#id22" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return x-y indexed data’s x and y-coordinate meshgrids</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">node_ids</code></dt>
+<dl class="py method">
+<dt id="id23">
+<em class="property">property </em><code class="sig-name descname">node_ids</code><a class="headerlink" href="#id23" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return node IDs for x-y indexed data</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.plot_surface">
-<code class="descname">plot_surface</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.plot_surface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.plot_surface" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots elevation data as surface.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.plot_surface(<a href="#id17"><span class="problematic" id="id18">*</span></a>args, <a href="#id19"><span class="problematic" id="id20">**</span></a>kwargs)</li>
-<li><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.plot_surface(<a href="#id21"><span class="problematic" id="id22">*</span></a>args, <a href="#id23"><span class="problematic" id="id24">**</span></a>kwargs)</li>
+<code class="sig-name descname">plot_surface</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">value</span><span class="o">=</span><span class="default_value">'elev'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.plot_surface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.plot_surface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots elevation data as surface. The <code class="docutils literal notranslate"><span class="pre">value</span></code> keyword can be used
+to color the surface by the elevation gradient or curvature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.plot_surface(<a href="#id24"><span class="problematic" id="id25">*</span></a>args, <a href="#id26"><span class="problematic" id="id27">**</span></a>kwargs)</p></li>
+<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – <dl class="simple">
+<dt>Value to plot, one of “elev”, “grad”, “laplace”.</dt><dd><ul>
+<li><p>”elev” will plot elevation data</p></li>
+<li><p>”grad” will plot elevation gradient magnitude</p></li>
+<li><p>”laplace” will plot elevation Laplacian (2nd derivative magnitude)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.plot_surface(<a href="#id28"><span class="problematic" id="id29">*</span></a>args, <a href="#id30"><span class="problematic" id="id31">**</span></a>kwargs)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.plot_trisurf">
-<code class="descname">plot_trisurf</code><span class="sig-paren">(</span><em>method</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.plot_trisurf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.plot_trisurf" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">plot_trisurf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">value</span><span class="o">=</span><span class="default_value">'elev'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.plot_trisurf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.plot_trisurf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots elevation triangulation. Must have triangulation generated.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of triangulation method to plot mesh for</li>
-<li><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.plot_trisurf(<a href="#id25"><span class="problematic" id="id26">*</span></a>args, <a href="#id27"><span class="problematic" id="id28">**</span></a>kwargs)</li>
-<li><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.plot_trisurf(<a href="#id29"><span class="problematic" id="id30">*</span></a>args, <a href="#id31"><span class="problematic" id="id32">**</span></a>kwargs)</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Name of triangulation method to plot mesh for</p></li>
+<li><p><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.plot_trisurf(<a href="#id32"><span class="problematic" id="id33">*</span></a>args, <a href="#id34"><span class="problematic" id="id35">**</span></a>kwargs)</p></li>
+<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – <dl class="simple">
+<dt>Value to plot, one of “elev”, “grad”, “laplace”.</dt><dd><ul>
+<li><p>”elev” will plot elevation data</p></li>
+<li><p>”grad” will plot elevation gradient magnitude</p></li>
+<li><p>”laplace” will plot elevation Laplacian (2nd derivative magnitude)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.plot_trisurf(<a href="#id36"><span class="problematic" id="id37">*</span></a>args, <a href="#id38"><span class="problematic" id="id39">**</span></a>kwargs)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.read_arc_ascii">
-<code class="descname">read_arc_ascii</code><span class="sig-paren">(</span><em>filename</em>, <em>resolution</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.read_arc_ascii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.read_arc_ascii" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read_arc_ascii</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">resolution</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.read_arc_ascii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.read_arc_ascii" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads ARC ASCII data stored in filename and populates internal data.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of file to read</li>
-<li><strong>resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Resolution of ARC ASCII data in meters</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Name of file to read</p></li>
+<li><p><strong>resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – Resolution of ARC ASCII data in meters</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.scatter">
-<code class="descname">scatter</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.scatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.scatter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots 3D scatterplot of elevation data</p>
+<code class="sig-name descname">scatter</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.scatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.scatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots 3D scatterplot of elevation data.</p>
 <p>NOTE: This is likely to be extremely slow for large maps.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.scatter(<a href="#id33"><span class="problematic" id="id34">*</span></a>args, <a href="#id35"><span class="problematic" id="id36">**</span></a>kwargs)</li>
-<li><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.scatter(<a href="#id37"><span class="problematic" id="id38">*</span></a>args, <a href="#id39"><span class="problematic" id="id40">**</span></a>kwargs)</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> (<em>positional arguments</em>) – Positional arguments to pass to matplotlib.axes.scatter(<a href="#id40"><span class="problematic" id="id41">*</span></a>args, <a href="#id42"><span class="problematic" id="id43">**</span></a>kwargs)</p></li>
+<li><p><strong>**kwargs</strong> (<em>keyword arguments</em>) – Keyword arguments to pass to matplotlib.axes.scatter(<a href="#id44"><span class="problematic" id="id45">*</span></a>args, <a href="#id46"><span class="problematic" id="id47">**</span></a>kwargs)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.split_cell">
-<code class="descname">split_cell</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.split_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.split_cell" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">split_cell</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.split_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.split_cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create split-cell triangulation of elevation data.</p>
 <p>Split-cell meshes split each square defined by the elevation grid into
 two right triangles. Computed mesh is stored under the name ‘split-cell’.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevData.write">
-<code class="descname">write</code><span class="sig-paren">(</span><em>filename</em>, <em>suppress=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.write" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">suppress</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevData.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevData.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write data to a Numpy .npz file</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of .npz file to write data to</li>
-<li><strong>suppress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Optional, True to suppress print() output</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Name of .npz file to write data to</p></li>
+<li><p><strong>suppress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Optional, True to suppress print() output</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">x</code></dt>
+<dl class="py method">
+<dt id="id48">
+<em class="property">property </em><code class="sig-name descname">x</code><a class="headerlink" href="#id48" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return array of x coordinates</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">y</code></dt>
+<dl class="py method">
+<dt id="id49">
+<em class="property">property </em><code class="sig-name descname">y</code><a class="headerlink" href="#id49" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return array of y coordinates</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="topygraphy.elevdata.ElevMesh">
-<em class="property">class </em><code class="descclassname">topygraphy.elevdata.</code><code class="descname">ElevMesh</code><span class="sig-paren">(</span><em>method=None</em>, <em>elev_data=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevMesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevMesh" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">topygraphy.elevdata.</code><code class="sig-name descname">ElevMesh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">elev_data</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevMesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevMesh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class defining an elevation data mesh. Closely follows NumPy triangulation format</p>
-<dl class="method">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevMesh.compute">
-<code class="descname">compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevMesh.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.compute" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topygraphy/elevdata.html#ElevMesh.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.compute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform mesh computation with current method and ElevData object.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevMesh.method">
-<code class="descname">method</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.method" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">method</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.method" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return method name</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="topygraphy.elevdata.ElevMesh.methods">
-<code class="descname">methods</code><em class="property"> = ['split-cell', 'delaunay']</em><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.methods" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">methods</code><em class="property"> = ['split-cell', 'delaunay']</em><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.methods" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevMesh.nodes">
-<code class="descname">nodes</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.nodes" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">nodes</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return points</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevMesh.points">
-<code class="descname">points</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.points" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">points</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.points" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return points</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevMesh.simplices">
-<code class="descname">simplices</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.simplices" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">simplices</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.simplices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return triangles</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py method">
 <dt id="topygraphy.elevdata.ElevMesh.tri">
-<code class="descname">tri</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.tri" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">tri</code><a class="headerlink" href="#topygraphy.elevdata.ElevMesh.tri" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return triangles</p>
 </dd></dl>
 
@@ -391,61 +502,30 @@ two right triangles. Computed mesh is stored under the name ‘split-cell’.</p
 </div>
 
 
-          </div>
-        </div>
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="index.html" title="previous page">ToPygraphy User Guide and API</a>
+    <a class='right-next' id="next-link" href="Examples/index.html" title="next page">Examples</a>
+
+              </div>
+              
+          </main>
+          
+
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">ToPygraphy User Guide and API</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="Examples/index.html"
-                        title="next chapter">Examples</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/elevdata.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
     </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Examples/index.html" title="Examples"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="ToPygraphy User Guide and API"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">ToPygraphy 0.00.01: documentation</a> &#187;</li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2019, Zach Meves.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
-    </div>
+
+    <script src="_static/js/index.js"></script>
+    <footer class="footer">
+  <div class="container">
+    <p>
+          &copy; Copyright 2019, Zach Meves.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.1.<br/>
+    </p>
+  </div>
+</footer>
   </body>
 </html>
